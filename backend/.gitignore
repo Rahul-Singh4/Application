@@ -1,1 +1,11 @@
-node_modules
+# Node.js dependencies
+node_modules/
+
+# Environment variables
+.env
+
+# npm package-lock file (unless you need to lock versions for your team)
+package-lock.json
+
+# Log files
+*.log

@@ -6,9 +6,9 @@ const { User, Account } = require("../db");
 const router = express.Router();
 const { authMiddleware } = require("../middleware");
 const signupSchema = zod.object({
-  username: zod.string(),
-  password: zod.string(),
+  username: zod.string().email(),
   firstName: zod.string(),
+  lastName: zod.string(),
   password: zod.string(),
 });
 
@@ -16,17 +16,17 @@ router.post("/signup", async (req, res) => {
   const body = req.body;
   const { success } = signupSchema.safeParse(body);
   if (!success) {
-    return res.json({
+    return res.status(411).json({
       message: "Email already taken / Incorrect Inputs",
     });
   }
 
-  const user = User.findOne({
+  const user = await User.findOne({
     username: body.username,
   });
 
-  if (user._id) {
-    return res.json({
+  if (user) {
+    return res.status(411).json({
       message: "Email already taken/ incorrect inputs",
     });
   }
@@ -54,16 +54,37 @@ router.post("/signup", async (req, res) => {
 });
 
 const signInSchema = zod.object({
-  username: zod.string(),
+  username: zod.string().email(),
   password: zod.string(),
 });
 
 router.post("/signin", async (req, res) => {
-  const { success } = signInSchema.safeParse(req.body);
+  const body = req.body;
+  const { success } = signInSchema.safeParse(body);
   if (!success) {
-    res.statusCode(411).json({
+    return res.status(411).json({
       message: "Error while logging in",
     });
+  }
+  const user = await User.findOne({
+    username: body.username,
+    password: body.password,
+  });
+
+  if (user) {
+    const token = jwt.sign(
+      {
+        userId: user._id,
+      },
+      JWT_SECRET
+    );
+
+    res.json({
+      token: token,
+    });
+    return;
+  } else {
+    return res.status(401).json({ message: "Invalid credentials" });
   }
 });
 
